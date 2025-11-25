@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Usage Logs</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; }
+    h1 { margin-bottom: 16px; }
+    table { border-collapse: collapse; width: 100%; max-width: 1000px; }
+    th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
+    th { background: #111827; color: #f9fafb; text-align: left; }
+    tr:nth-child(even) { background: #f9fafb; }
+    code { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Usage Logs</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>User</th>
+        <th>Prompt</th>
+        <th>Completion</th>
+        <th>Latency (s)</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>    
+    <tbody id="tbody">
+      <tr><td colspan="5">Loading…</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    async function loadLogs() {
+      try {
+        const res = await fetch('/dashboard');
+        const data = await res.json();
+        const rows = data.logs || [];
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No logs yet.</td></tr>';
+          return;
+        }
+
+        for (const row of rows) {
+        const [id, user, prompt, completion, latency, ts] = row;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${id}</td>
+          <td>${user}</td>
+          <td><code>${prompt}</code></td>
+          <td><code>${completion}</code></td>
+          <td>${latency.toFixed ? latency.toFixed(3) : latency}</td>
+          <td>${ts}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      } catch (e) {
+        console.error(e);
+        document.getElementById('tbody').innerHTML =
+          '<tr><td colspan="5">Error loading logs.</td></tr>';
+      }
+    }
+
+    loadLogs();
+    // refresh every 10 seconds
+    setInterval(loadLogs, 10000);
+  </script>
+</body>
+</html>
