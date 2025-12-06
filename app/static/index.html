@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Cortex Inference Platform</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 32px; margin-bottom: 8px; }
+    p { color: #4b5563; }
+    .btn-row { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+    a.button {
+      padding: 10px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      background: #111827;
+      color: #f9fafb;
+      font-size: 14px;
+    }
+    a.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cortex Inference Platform</h1>
+  <p>
+    Simple text-generation API backed by open-source models
+    (<code>gpt2</code>, <code>distilgpt2</code>) with per-user API keys and usage tracking.
+  </p>
+
+  <div class="btn-row">
+    <a href="signup.html" class="button">Get API key</a>
+    <a href="keys.html" class="button secondary">View my API key</a>
+    <a href="user-dashboard.html" class="button secondary">My usage dashboard</a>
+    <a href="dashboard.html" class="button secondary">Global logs (admin)</a>
+  </div>
+
+  <p style="margin-top:32px;font-size:13px;color:#6b7280;">
+    Backend: FastAPI + Transformers + SQLite · Metrics: Prometheus · Frontend: vanilla HTML + JS.
+  </p>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>My Usage · Cortex Inference</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 40px; max-width: 1100px; margin: 0 auto; }
+    h1 { margin-bottom: 16px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    th, td { border: 1px solid #e5e7eb; padding: 6px 8px; vertical-align: top; }
+    th { background: #111827; color: #f9fafb; text-align: left; }
+    tr:nth-child(even) { background: #f9fafb; }
+    code { white-space: pre-wrap; font-size: 12px; }
+    .warning { color: #b91c1c; }
+    a { color: #1d4ed8; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>My Usage</h1>
+  <p id="user"></p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Prompt</th>
+        <th>Completion</th>
+        <th>Latency (s)</th>
+        <th>Tokens</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="6">Loading…</td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:16px;">
+    See global logs (admin): <a href="dashboard.html">Global dashboard</a>
+  </p>
+
+  <script>
+    const apiKey = localStorage.getItem("cortex_api_key");
+    const username = localStorage.getItem("cortex_username");
+    const userP = document.getElementById("user");
+    const tbody = document.getElementById("tbody");
+
+    if (!apiKey) {
+      userP.innerHTML =
+        '<span class="warning">No API key in this browser. ' +
+        'Go to <a href="signup.html">signup</a> first.</span>';
+      tbody.innerHTML = '<tr><td colspan="6">No data.</td></tr>';
+    } else {
+      userP.textContent = "User: " + (username || "(unknown)");
+
+      loadLogs();
+      setInterval(loadLogs, 10000); // refresh every 10s
+    }
+
+    async function loadLogs() {
+      try {
+        const res = await fetch("/user/dashboard", {
+          headers: { "x-api-key": apiKey }
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          tbody.innerHTML =
+            `<tr><td colspan="6">Error: ${err.detail || res.statusText}</td></tr>`;
+          return;
+        }
+
+        const data = await res.json();
+        const rows = data.logs || [];
+        tbody.innerHTML = "";
+
+        if (rows.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='6'>No logs yet.</td></tr>";
+          return;
+        }
+
+        for (const row of rows) {
+          const [id, prompt, completion, latency, tokens, ts] = row;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${id}</td>
+            <td><code>${prompt}</code></td>
+            <td><code>${completion}</code></td>
+            <td>${latency != null ? Number(latency).toFixed(3) : "-"}</td>
+            <td>${tokens ?? "-"}</td>
+            <td>${ts}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      } catch (e) {
+        console.error(e);
+        tbody.innerHTML =
+          "<tr><td colspan='6'>Network error. Is the server running?</td></tr>";
+      }
+    }
+  </script>
+</body>
+</html>

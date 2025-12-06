@@ -10,11 +10,12 @@
     th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
     th { background: #111827; color: #f9fafb; text-align: left; }
     tr:nth-child(even) { background: #f9fafb; }
-    code { font-size: 12px; }
+    code { font-size: 12px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
   <h1>Usage Logs</h1>
+
   <table>
     <thead>
       <tr>
@@ -23,11 +24,12 @@
         <th>Prompt</th>
         <th>Completion</th>
         <th>Latency (s)</th>
+        <th>Tokens</th>
         <th>Timestamp</th>
       </tr>
-    </thead>    
+    </thead>
     <tbody id="tbody">
-      <tr><td colspan="5">Loading…</td></tr>
+      <tr><td colspan="7">Loading…</td></tr>
     </tbody>
   </table>
 
@@ -41,34 +43,31 @@
         tbody.innerHTML = '';
 
         if (rows.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5">No logs yet.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7">No logs yet.</td></tr>';
           return;
         }
 
         for (const row of rows) {
-        const [id, user, prompt, completion, latency, ts] = row;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${id}</td>
-          <td>${user}</td>
-          <td><code>${prompt}</code></td>
-          <td><code>${completion}</code></td>
-          <td>${latency.toFixed ? latency.toFixed(3) : latency}</td>
-          <td>${ts}</td>
-        `;
-        tbody.appendChild(tr);
-      }
-
+          const [id, user, prompt, completion, latency, tokens, ts] = row;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${id}</td>
+            <td>${user}</td>
+            <td><code>${prompt}</code></td>
+            <td><code>${completion}</code></td>
+            <td>${latency?.toFixed ? latency.toFixed(3) : latency}</td>
+            <td>${tokens ?? "-"}</td>
+            <td>${ts}</td>
+          `;
+          tbody.appendChild(tr);
+        }
       } catch (e) {
-        console.error(e);
         document.getElementById('tbody').innerHTML =
-          '<tr><td colspan="5">Error loading logs.</td></tr>';
+          '<tr><td colspan="7">Error loading logs.</td></tr>';
       }
     }
 
     loadLogs();
-    // refresh every 10 seconds
     setInterval(loadLogs, 10000);
   </script>
 </body>
