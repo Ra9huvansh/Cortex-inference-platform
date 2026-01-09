@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>My API key · Cortex Inference</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h1 { margin-bottom: 8px; }
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .warning { color: #b91c1c; margin-top: 8px; }
+    a { color: #1d4ed8; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>My API key</h1>
+  <div id="info"></div>
+
+  <h2>cURL example</h2>
+  <pre id="curl"></pre>
+
+  <h2>Python example</h2>
+  <pre id="python"></pre>
+
+  <p>
+    See your usage: <a href="user-dashboard.html">My usage dashboard</a>
+  </p>
+
+  <script>
+    const username = localStorage.getItem("cortex_username");
+    const apiKey = localStorage.getItem("cortex_api_key");
+    const info = document.getElementById("info");
+    const curlPre = document.getElementById("curl");
+    const pyPre = document.getElementById("python");
+
+    if (!apiKey || !username) {
+      info.innerHTML =
+        '<p class="warning">No API key found in this browser. ' +
+        'Go to <a href="signup.html">signup</a> first.</p>';
+    } else {
+      info.innerHTML =
+        "<p><b>Username:</b> " + username + "<br>" +
+        "<b>API key:</b> <code>" + apiKey + "</code></p>";
+
+      const curlExample =
+`curl -X POST "http://127.0.0.1:8000/generate" \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: ${apiKey}" \\
+  -d '{"model": "distilgpt2", "prompt": "Hello from Cortex!"}'`;
+
+      const pyExample =
+`import requests
+
+API_KEY = "${apiKey}"
+
+resp = requests.post(
+    "http://127.0.0.1:8000/generate",
+    headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
+    json={
+        "model": "distilgpt2",
+        "prompt": "Hello from Cortex!",
+        "max_tokens": 60,
+        "temperature": 0.7,
+        "top_p": 0.9,
+    },
+)
+print(resp.json())`;
+
+      curlPre.textContent = curlExample;
+      pyPre.textContent = pyExample;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Sign up · Cortex Inference</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
+    h1 { margin-bottom: 16px; }
+    label { display:block; margin-bottom: 4px; font-size: 14px; }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #d1d5db;
+      margin-bottom: 12px;
+    }
+    button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      background: #111827;
+      color: #f9fafb;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .msg { margin-top: 16px; font-size: 14px; white-space: pre-wrap; }
+    code {
+      background: #f3f4f6;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    a { color: #1d4ed8; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Create your API key</h1>
+
+  <p>Enter a username. The server will create a user + API key and we'll store it in this browser.</p>
+
+  <label for="username">Username</label>
+  <input id="username" type="text" placeholder="e.g. raghu" />
+  <button id="btn">Generate API key</button>
+
+  <div id="msg" class="msg"></div>
+
+  <p style="margin-top:24px;">
+    Already have a key? <a href="keys.html">View it here</a>.
+  </p>
+
+  <script>
+    const input = document.getElementById('username');
+    const btn = document.getElementById('btn');
+    const msg = document.getElementById('msg');
+
+    btn.onclick = async () => {
+      const username = input.value.trim();
+      if (!username) {
+        msg.textContent = "Please enter a username.";
+        return;
+      }
+
+      msg.textContent = "Registering...";
+      try {
+        const res = await fetch(`/register?username=${encodeURIComponent(username)}`, {
+          method: "POST"
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          msg.textContent = "Error: " + (err.detail || res.statusText);
+          return;
+        }
+        const data = await res.json();
+        const apiKey = data.api_key;
+
+        // Save to localStorage
+        localStorage.setItem("cortex_username", data.username);
+        localStorage.setItem("cortex_api_key", apiKey);
+
+        msg.innerHTML =
+          "✅ API key created and saved in this browser.<br><br>" +
+          "<b>Username:</b> " + data.username + "<br>" +
+          "<b>API key:</b> <code>" + apiKey + "</code><br><br>" +
+          `Next: <a href="keys.html">View key & API examples</a>`;
+      } catch (e) {
+        console.error(e);
+        msg.textContent = "Request failed. Check if server is running.";
+      }
+    };
+  </script>
+</body>
+</html>
