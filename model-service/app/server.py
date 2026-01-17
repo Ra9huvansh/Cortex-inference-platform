@@ -8,6 +8,7 @@ import json
 import tempfile
 import shutil
 import asyncio
+import subprocess
 from contextlib import contextmanager
 from uuid import uuid4
 from datetime import datetime
@@ -62,6 +63,9 @@ MIN_FREE_DISK_MB = 100  # adjust if needed
 # Backpressure - Cap concurrent inferences
 MAX_INFLIGHT_INFERENCES = 3
 inference_semaphore = asyncio.Semaphore(MAX_INFLIGHT_INFERENCES)
+
+MAX_WORKERS = 3
+current_workers = 1  # start with 1
 
 # -------------------------------------------------
 # TASK 2: Structured Logging (FIXED)
@@ -219,6 +223,32 @@ def validate_username(username: str) -> str:
         raise ValueError("Username must be alphanumeric (with _ or - allowed)")
     return username.lower()
 
+async def autoscaler_loop():
+    global current_workers
+
+    while True:
+        await asyncio.sleep(2)
+
+        depth = REQUEST_QUEUE.qsize()
+
+        if depth > 5 and current_workers < MAX_WORKERS:
+            current_workers += 1
+
+            log_structured(
+                "autoscaler",
+                "SCALE_UP",
+                queue_depth=depth,
+                workers=current_workers
+            )
+
+            # simulate scale-up (new worker = new process)
+            subprocess.Popen([
+                "uvicorn",
+                "server:app",
+                "--host", "0.0.0.0",
+                "--port", "8000",
+                "--workers", "1"
+            ])
 
 # -------------------------------------------------
 # FastAPI app
@@ -482,8 +512,19 @@ def register(username: str, request: Request):
 
 @app.on_event("startup")
 async def start_workers():
+    # start inference worker
     asyncio.create_task(inference_worker())
-    log_structured("startup", "WORKER_STARTED", workers=1)
+
+    # start fake autoscaler
+    asyncio.create_task(autoscaler_loop())
+
+    log_structured(
+        "startup",
+        "WORKER_STARTED",
+        workers=1,
+        pid=os.getpid()
+    )
+
 
 
 @app.get("/")
@@ -912,6 +953,11 @@ async def run_inference(request_id: str, user: str, req: GenerateRequest):
         await asyncio.sleep(30)  # ← REMOVE THIS BEFORE PRODUCTION
 
     # -------- 4. Load model --------
+    log_structured(
+        request_id,
+        "MODEL_LOAD_START",
+        pid=os.getpid()
+    )
     try:
         tokenizer, model = get_model(req.model, request_id)
     except ValueError as e:
@@ -923,6 +969,12 @@ async def run_inference(request_id: str, user: str, req: GenerateRequest):
         REQUEST_OUTCOME.labels(model=req.model, status="server_error", reason="model_load_failed").inc()
         log_structured(request_id, "MODEL_LOAD_FAIL", reason="load_error", model=req.model, error=str(e))
         api_error(request_id, "MODEL_LOAD_FAILED", "Model load failed", 500)
+    
+    log_structured(
+        request_id,
+        "MODEL_LOAD_END",
+        pid=os.getpid()
+    )
 
     # -------- 5. Context window check --------
     try:
